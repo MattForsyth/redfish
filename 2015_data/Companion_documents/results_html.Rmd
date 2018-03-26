@@ -1,5 +1,5 @@
 ---
-title: "Redfish 2013 results"
+title: "Redfish 2015 results"
 author: ""
 date: ""
 output:
@@ -38,43 +38,27 @@ source('../R_code/00.r')
 
 ```
 
-```{#numCode .R .numberLines}
-redfield(dataset$C_drawdown, 
-         dataset$N_drawdown, 
-         dataset$P_drawdown,
-         subset = dataset$Expocode)
 
-kable(redstats1, digits = 2, caption = 'Redfield statistics for RFI')
-
-kable(redstats2, digits = 2, caption = 'Redfield statistics for RFG')
-
-```
 
 ```{r, echo = FALSE}
-redfield(dataset$C_drawdown, 
-         dataset$N_drawdown, 
-         dataset$P_drawdown,
-         subset = dataset$Expocode)
+#redfield(dataset$C_drawdown, 
+#         dataset$N_drawdown, 
+#         dataset$P_drawdown,
+#         subset = dataset$Expocode)
 
-kable(redstats1, digits = 2, caption = 'Redfield statistics for RFI')
+#kable(redstats1, digits = 2, caption = 'Redfield statistics for RFI')
 
-kable(redstats2, digits = 2, caption = 'Redfield statistics for RFG')
-
-```
-
-```{#numCode .R .numberLines}
-redplot(dataset$C_drawdown, 
-        dataset$N_drawdown, 
-        dataset$P_drawdown, 
-        dataset$Expocode, font.size = 10, size = 1, lwd = 0.75)
+#kable(redstats2, digits = 2, caption = 'Redfield statistics for RFG')
 
 ```
+
+
 
 ```{r, echo = FALSE, fig.height = 7, fig.width = 7, fig.align = "center"}
-redplot(dataset$C_drawdown, 
-        dataset$N_drawdown, 
-        dataset$P_drawdown, 
-        dataset$Expocode, font.size = 13, size = 2, lwd = 1.5)
+#redplot(dataset$C_drawdown, 
+#        dataset$N_drawdown, 
+#        dataset$P_drawdown, 
+#        dataset$Expocode, font.size = 13, size = 2, lwd = 1.5)
 
 ```
 
@@ -109,9 +93,9 @@ kable(ranges2, digits = 2,
 
 ```
 
-```{r, echo = FALSE}
-nutrientRange(dataset[,10],
-              dataset[,15:21],
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+nutrientRange(dataset[,7],
+              dataset[,c(15,17,25,33:35)],
               depth1 = 0, 
               depth2= 15, 
               depth3 = 80,
@@ -120,9 +104,9 @@ nutrientRange(dataset[,10],
 colnames(ranges1) <- c('Variable','Minimum','Maximum')
 colnames(ranges2) <- c('Variable','Minimum','Maximum')
 
-variables <- c('Alkalinity','pH','Organic carbon','pCO2','Nitrate','Phosphate','SiO2')
+variables <- c('pH','Alkalinity','pCO2','Nitrate','Phosphate','SiO2')
 
-units <- c('umol/kg','[in-situ]','umol/kg','uatm','umol/kg','umol/kg','umol/kg')
+units <- c('[in-situ]','umol/kg','uatm','umol/kg','umol/kg','umol/kg')
 
 ranges1$Variable <- variables
 ranges2$Variable <- variables
@@ -166,29 +150,27 @@ grid.arrange(profile1,profile2,profile3,profile4,profile5,profile6,ncol=2)
 ```
 
 
-```{r, echo = FALSE, fig.height = 7, fig.width = 5, fig.align = "center"}
-stations <- c(411, 416, 417, 419, 433, 434, 
-              436, 454, 329, 308, 300, 294, 
-              291, 269, 251, 244)
+```{r, echo = FALSE, fig.height = 7, fig.width = 5, fig.align = "center", message = FALSE, warning = FALSE}
+stations <- c(284)
 
-generateProfile(dataset[,10], 
-                 dataset[,15:20], 
-                 dataset$Station_number,
+generateProfile(dataset[,7], 
+                 dataset[,c(15,17,25,33:35)], 
+                 dataset$Station,
                  subsets = stations, size = 1.5, lwd=1)
 
 profile1 <- profile1 + 
-  xlab(expression("Alkalinity"~"["~mu~mol~kg^{-1}~"]"))
-profile2 <- profile2 + 
   xlab("pH [in-situ]")
+profile2 <- profile2 + 
+  xlab(expression("Alkalinity"~"["~mu~mol~kg^{-1}~"]"))
 profile3 <- profile3 + 
-  xlab(expression("Total carbon"~"["~mu~mol~kg^{-1}~"]"))
-profile4 <- profile4 + 
   xlab(expression(pCO[2]~"["~mu~atm~"]"))
-profile5 <- profile5 + 
+profile4 <- profile4 + 
   xlab(expression(NO[2]^{{textstyle("-")}}+
                     NO[3]^{{textstyle("-")}}~"["~mu~mol~kg^{-1}~"]"))
-profile6 <- profile6 + 
+profile5 <- profile5 + 
   xlab(expression(PO[4]^{{textstyle("3-")}}~"["~mu~mol~kg^{-1}~"]"))
+profile6 <- profile6 +
+    xlab(expression(SiO[2]~"["~mu~mol~kg^{-1}~"]"))
 
 grid.arrange(profile1,profile2,profile3,profile4,profile5,profile6,ncol=2)
 
@@ -196,13 +178,24 @@ grid.arrange(profile1,profile2,profile3,profile4,profile5,profile6,ncol=2)
 
 
 ## Surface plots
+```{#numCode .R .numberLines}
+par(mfrow=c(2,2))
+
+surfacePlot(dataset$Nominal.Depth..m.,
+            dataset$Latitude..degrees_north.,
+            dataset$Longitude..degrees_east.,
+            dataset[,c(33:35)],
+            plot_depth = 10)
+
+```
+
 ```{r, echo = TRUE, fig.width=7,fig.height=6,fig.cap="Surface plots of selected measurements in the Redfish 2013 sampling area. A is alkalinity in umol/kg, B is in-situ pH, C is nitrate in umol/kg, and D is phosphate in umol/kg. "}
 par(mfrow=c(2,2))
 
-surfacePlot(dataset$Depth.m.,
-            dataset$Latitude,
-            dataset$Longitude,
-            dataset[,c(15,16,19,20)],
+surfacePlot(dataset$Nominal.Depth..m.,
+            dataset$Latitude..degrees_north.,
+            dataset$Longitude..degrees_east.,
+            dataset[,c(33:35)],
             plot_depth = 10)
 
 ```

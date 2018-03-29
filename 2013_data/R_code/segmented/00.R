@@ -11,7 +11,7 @@ library(oce) #used by oceanchemistry
 library(ocedata) #used by oceanchemistry and oce 
 library(knitr)
 
-fluxdata <- read.csv(file='../Data/2013_data.csv', header=TRUE, sep=",")
+fluxdata <- read.csv(file='../../Data/2013_data.csv', header=TRUE, sep=",")
 
 scrubber(dataframe = fluxdata, 
          replacee = c(0,-999), 

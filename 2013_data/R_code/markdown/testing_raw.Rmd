@@ -1,0 +1,132 @@
+---
+title: "Redfish 2013 data processing"
+author: ""
+date: ""
+output:
+  html_document:
+    highlight: haddock
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Preamble
+
+We start by loading several packages that will be used to process the Redfish data. 
+
+The `ggplot2` package is used for plotting, `gridExtra` improves figure organization, and `xtable` is used to convert tables to LaTeX when necessary. The `dplyr`, `knitr`, and `tibble` packages are used for manipulating dataframes, and `oceanchemistry`, `oce`, and `ocedata` are all used in the data analysis.
+```{r, message = FALSE, warning = FALSE}
+
+library(ggplot2) 
+library(gridExtra) 
+library(xtable) 
+library(dplyr) 
+library(oceanchemistry) 
+library(oce) 
+library(ocedata) 
+library(knitr)
+library(tibble)
+
+
+library(maps)
+library(maptools)
+library(mapdata)
+
+```
+
+## Data
+
+Now we can read in the data. There are a few things that we should do before starting any analysis. 
+
+(1) For some reason there are a few extra blank columns. These must have been read in along with the data. Since they serve no purpose we should cut them out. This is done by indexing the dataframe. 
+
+(2) The original longitude format ranges from 0 to +360. We should convert this to the right-handed cartesian coordiante system. 
+
+(3) Pressure is reported but depth is not, so we should convert the pressure to depth. We can do this using the formula from the UNESCO Technical Papers. 
+
+```{r, message = FALSE, warning = FALSE, results = 'hide'}
+
+rawdata <- read.csv(file='../../Data/2013_raw.csv',header=T,sep=',')
+rawdata <- rawdata[,1:14]
+rawdata$Longitude <- -1*(360 - rawdata$Longitude)
+
+latitude <- rawdata$Latitude*pi/180
+x <- (sin(latitude/57.29578))^2
+p <- rawdata$CTDPRS..DBARS.
+g <- 9.780318*(1.0+(5.2788*10^(-3)+2.36*10^(-5)*x)*x)+1.092*10^(-6)*p
+depth <- ((((-1.82*10^(-15)*p+2.279*10^(-10))*p - 2.2512*10^(-5))*p + 9.72659)*p)/g
+rawdata <- add_column(rawdata, Depth.m. = depth, .after = 5)
+
+```
+
+## The study
+The first phase of the Redfish project took place during the late spring and early summer of 2013. This phase of the project involved two separate cruises: Redfish Iceland (RFI) and Redfish German (RFG). RFI sampled the Irminger Sea and RFG sampled the Labrador Sea. Researchers collected chemical data from the upper 100m of the water column. Parameters of particular interest included the carbonate system and macronutrients. Chlorophyll imagery was used to enhance the results of the cruises.
+
+The main objective of Redfish 2013 was to examine inorganic carbon and nutrient dynamics in the Irminger Sea and nearby waters. Researchers involved in the project hoped to establish a baseline for future testing in the study region.
+
+```{r}
+dataRFI <- subset(rawdata, Cruise == "RFI")
+dataRFG <- subset(rawdata, Cruise == "RFG")
+
+lons <- rawdata$Longitude[match(x = unique(rawdata$Station), table = rawdata$Station)]
+lats <- rawdata$Latitude[match(x = unique(rawdata$Station), table = rawdata$Station)]
+
+RFIlats <- dataRFI$Latitude[match(x = unique(dataRFI$Station), table = dataRFI$Station)]
+RFIlons <- dataRFI$Longitude[match(x = unique(dataRFI$Station), table = dataRFI$Station)]
+
+RFGlats <- dataRFG$Latitude[match(x = unique(dataRFG$Station), table = dataRFG$Station)]
+RFGlons <- dataRFG$Longitude[match(x = unique(dataRFG$Station), table = dataRFG$Station)]
+
+
+plot(lons,lats, xlim = c(-55,-20), ylim = c(50, 66), 
+     col = "black", cex = 0.5, pch = 19, xlab = 'Longitude', 
+     ylab = 'Latitude')
+lines(RFIlons, RFIlats, xlim = c(-55,-20), ylim = c(50, 66), 
+      col = "red", lwd = 1.5)
+lines(RFGlons, RFGlats, xlim = c(-55,-20), ylim = c(50, 66), 
+      col = "blue", lwd = 1.5)
+map("worldHires",c("Greenland", "Canada","Iceland","UK","Denmark"),
+    xlim = c(-60,-5),ylim=c(50,70),col='gray',fill=TRUE, add = TRUE)
+
+```
+
+## Nutrient ranges
+
+```{r}
+
+nutrientRange(rawdata$Depth.m., rawdata[, c(9,10,12,13)], depth1 = 0, depth2 = 15, depth3 = 85, depth4 = 115)
+
+colnames(ranges1) <- c('Variable','Minimum','Maximum')
+colnames(ranges2) <- c('Variable','Minimum','Maximum')
+
+variables <- c('Alkalinity','pH','Nitrate','Phosphate')
+units <- c('umol/kg','[in-situ]','umol/kg','umol/kg')
+
+ranges1$Variable <- variables
+ranges2$Variable <- variables
+
+ranges1$Units <- units
+ranges2$Units <- units
+
+kable(ranges1, digits = 2)
+kable(ranges2, digits = 2)
+
+```
+
+## Surface plots
+
+```{r}
+
+par(mfrow = c(2,2))
+surfacePlot(rawdata$Depth.m., rawdata$Latitude, rawdata$Longitude, rawdata[, c(9,10,12,13)], plot_depth = 10)
+
+```
+
+
+
+
